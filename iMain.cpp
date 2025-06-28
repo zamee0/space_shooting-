@@ -2,19 +2,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <cstring>
-#include <windows.h>  // For PlaySound
-#include <mmsystem.h>
-
-#pragma comment(lib, "winmm.lib")
 
 #define SCREEN_WIDTH 1344
 #define SCREEN_HEIGHT 760
-
-// Game states
-enum GameState { LOADING, MENU, NAME_ENTRY, PLAYING, GAME_OVER };
-GameState currentState = LOADING;
-
-int loadingStartTime;
 
 int playerX = SCREEN_WIDTH / 2, playerY = 50;
 int bulletX[50], bulletY[50], bulletCount = 0;
@@ -30,7 +20,7 @@ int nameIndex = 0;
 
 void spawnEnemies() {
     for (int i = 0; i < 5; i++) {
-        enemyX[i] = rand() % (SCREEN_WIDTH - 100);
+    enemyX[i] = rand() % (SCREEN_WIDTH - 100);
         enemyY[i] = SCREEN_HEIGHT - rand() % 200;
         enemyAlive[i] = 6;
     }
@@ -59,101 +49,85 @@ void drawControls() {
 void iDraw() {
     iClear();
 
-    if (currentState == LOADING) {
-        iShowImage(0, 0, "loadingscreen.png");
-        return;
-    }
-
-    if (currentState == MENU) {
-        iShowImage(0, 0, "menu.bmp");
-        iSetColor(255, 255, 255);
-        iText(SCREEN_WIDTH/2 - 100, 100, "Press ENTER to Start", GLUT_BITMAP_HELVETICA_18);
-        return;
-    }
-
-    if (!nameEntered && currentState == NAME_ENTRY) {
+    if (!nameEntered) {
+        PlaySound("menu.wav", NULL, SND_ASYNC | SND_LOOP);
         iSetColor(255, 255, 255);
         iText(500, 400, "Enter Your Name:", GLUT_BITMAP_HELVETICA_18);
         iText(500, 370, playerName, GLUT_BITMAP_HELVETICA_18);
         return;
+    } else if (!isPaused && health > 0 && fuel > 0) {
+        PlaySound("ingame.wav", NULL, SND_ASYNC | SND_LOOP);
     }
 
-    if (currentState == PLAYING || currentState == GAME_OVER) {
-        // Game Background
+    if (!isPaused) {
         iShowImage(0, 0, "background (2).png");
-
-        // Player
         iShowImage(playerX, playerY, "player.png");
 
-        // Player Bullets
         for (int i = 0; i < bulletCount; i++) {
             iSetColor(0, 255, 0);
             iFilledRectangle(bulletX[i], bulletY[i], 6, 15);
         }
 
-        // Enemies
         for (int i = 0; i < 5; i++) {
-            if (enemyAlive[i] > 0)
+    if (enemyAlive[i] > 0)
                 iShowImage(enemyX[i], enemyY[i], "enemy.png");
         }
 
-        // Enemy Bullets
         for (int i = 0; i < enemyBulletCount; i++) {
             iSetColor(255, 0, 0);
             iFilledCircle(enemyBulletX[i], enemyBulletY[i], 4);
         }
 
-        // Meteors
         for (int i = 0; i < 2; i++) {
             iShowImage(meteorX[i], meteorY[i], "meteor.png");
         }
 
-        // Fuel tank
         if (showFuelTank) {
             iShowImage(fuelTankX, fuelTankY, "fuel.png");
         }
 
-        // Health bar
         iSetColor(255, 0, 0);
         iFilledRectangle(20, 720, health * 2, 20);
         iSetColor(255, 255, 255);
         iRectangle(20, 720, 200, 20);
         iText(20, 745, "Health", GLUT_BITMAP_HELVETICA_12);
 
-        // Fuel bar
         iSetColor(0, 255, 0);
         iFilledRectangle(20, 690, fuel, 20);
         iSetColor(255, 255, 255);
         iRectangle(20, 690, 100, 20);
         iText(20, 665, "Fuel", GLUT_BITMAP_HELVETICA_12);
 
-        // Score
         char scoreStr[50];
         sprintf(scoreStr, "Score: %d", score);
         iText(SCREEN_WIDTH - 200, 740, scoreStr, GLUT_BITMAP_HELVETICA_12);
-
-        if (showControls) drawControls();
-
-        if (currentState == GAME_OVER) {
-            iSetColor(255, 0, 0);
-            iText(SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 + 20, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24);
-
-            char scoreMsg[100];
-            sprintf(scoreMsg, "Your Score: %d", score);
-            iText(SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 10, scoreMsg, GLUT_BITMAP_HELVETICA_18);
-        }
     }
+
+    if (health <= 0 || fuel <= 0) {
+    isPaused = true;
+    PlaySound("missionpass.wav", NULL, SND_ASYNC);
+    iSetColor(255, 0, 0);
+    iText(SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 + 20, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24);
+
+    char scoreMsg[100];
+    sprintf(scoreMsg, "Your Score: %d", score);
+    iText(SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 10, scoreMsg, GLUT_BITMAP_HELVETICA_18);
+}
+
+    iSetColor(255, 255, 255);
+    iText(20, 20, "Press 'R' to Restart", GLUT_BITMAP_HELVETICA_12);
+    if (showControls) drawControls();
 }
 
 void iMouseMove(int mx, int my) {
-    if (currentState == PLAYING && !isPaused) {
+    if (!isPaused) {
         playerX = mx - 50;
         playerY = my - 50;
     }
 }
 
 void iMouse(int button, int state, int mx, int my) {
-    // Not used
+
 }
 
 void iMouseDrag(int mx, int my) {}
@@ -161,31 +135,12 @@ void iMouseDrag(int mx, int my) {}
 void iMouseWheel(int dir , int mx , int my) {}
 
 void iKeyboard(unsigned char key) {
-    if (currentState == MENU && key == '\r') {
-        currentState = NAME_ENTRY;
-        PlaySound(0, 0, 0); // stop menu music
+    if (!nameEntered) {
+        if (key == '\r') nameEntered = true;
+        else if (key == '\b' && nameIndex > 0) playerName[--nameIndex] = '\0';
+        else if (nameIndex < 49 && key != '\r') playerName[nameIndex++] = key;
         return;
     }
-
-    if (currentState == NAME_ENTRY) {
-        if (key == '\r') {
-            if (nameIndex > 0) {  // Only proceed if name not empty
-                nameEntered = true;
-                currentState = PLAYING;
-                PlaySound("ingame.wav", NULL, SND_ASYNC | SND_LOOP);
-            }
-        }
-        else if (key == '\b' && nameIndex > 0) {
-            playerName[--nameIndex] = '\0';
-        }
-        else if (nameIndex < 49 && key != '\r') {
-            playerName[nameIndex++] = key;
-            playerName[nameIndex] = '\0';
-        }
-        return;
-    }
-
-    if (currentState != PLAYING) return;
 
     if (key == 'r') {
         health = 100;
@@ -193,14 +148,13 @@ void iKeyboard(unsigned char key) {
         score = 0;
         bulletCount = 0;
         enemyBulletCount = 0;
-        isPaused = false;
         spawnEnemies();
         spawnMeteors();
     } else if (key == 'w' && bulletCount < 50) {
         bulletX[bulletCount] = playerX + 45;
         bulletY[bulletCount] = playerY + 90;
         bulletCount++;
-    } else if (key == 27) { // ESC pause/resume
+    } else if (key == 27) {
         isPaused = !isPaused;
     } else if (key == 'h') {
         showControls = !showControls;
@@ -208,26 +162,22 @@ void iKeyboard(unsigned char key) {
 }
 
 void iSpecialKeyboard(unsigned char key) {
-    if (currentState != PLAYING || isPaused) return;
+    if (isPaused) return;
     if (key == GLUT_KEY_RIGHT) playerX += 20;
     if (key == GLUT_KEY_LEFT) playerX -= 20;
 }
 
 void updateGame() {
-    if (currentState != PLAYING || isPaused) return;
+    if (isPaused || !nameEntered) return;
 
-    // Move player bullets
     for (int i = 0; i < bulletCount; i++) {
         bulletY[i] += 15;
-        if (bulletY[i] > SCREEN_HEIGHT)
-            bulletY[i] = -100;
+        if (bulletY[i] > SCREEN_HEIGHT) bulletY[i] = -100;
     }
 
-    // Move enemy bullets
     for (int i = 0; i < enemyBulletCount; i++) {
         enemyBulletY[i] -= 5;
-        if (enemyBulletY[i] < 0)
-            enemyBulletY[i] = -100;
+        if (enemyBulletY[i] < 0) enemyBulletY[i] = -100;
         if (enemyBulletX[i] > playerX && enemyBulletX[i] < playerX + 100 &&
             enemyBulletY[i] > playerY && enemyBulletY[i] < playerY + 100) {
             health -= 30;
@@ -235,9 +185,8 @@ void updateGame() {
         }
     }
 
-    // Enemies move and shoot
     for (int i = 0; i < 5; i++) {
-        if (enemyAlive[i] > 0) {
+    if (enemyAlive[i] > 0) {
             enemyY[i] -= 1;
             if (enemyY[i] < 0) {
                 enemyAlive[i] = 0;
@@ -260,7 +209,6 @@ void updateGame() {
         }
     }
 
-    // Meteors move and collide
     for (int i = 0; i < 2; i++) {
         meteorY[i] -= 5;
         if (meteorY[i] < 0) {
@@ -274,7 +222,6 @@ void updateGame() {
         }
     }
 
-    // Fuel tank move & collide
     if (showFuelTank) {
         fuelTankY -= 2;
         if (fuelTankY < 0) showFuelTank = false;
@@ -285,7 +232,6 @@ void updateGame() {
         }
     }
 
-    // Fuel tank spawn timer
     fuelTimer++;
     if (fuelTimer > 3000) {
         showFuelTank = true;
@@ -294,39 +240,27 @@ void updateGame() {
         fuelTimer = 0;
     }
 
-    // Fuel drain timer
     fuelDrainTimer++;
     if (fuelDrainTimer > 6000) {
         fuel -= 10;
         fuelDrainTimer = 0;
     }
-
-    // Check game over
-    if (fuel <= 0 || health <= 0) {
-        currentState = GAME_OVER;
-        isPaused = true;
-        PlaySound("missionpass.wav", NULL, SND_ASYNC);
-    }
 }
 
 int main(int argc, char *argv[]) {
     glutInit(&argc, argv);
-    srand(time(0));
-    loadingStartTime = clock();
-
-    spawnEnemies();
-    spawnMeteors();
-
-    iSetTimer(100, []() {
-        if (currentState == LOADING && (clock() - loadingStartTime) / CLOCKS_PER_SEC >= 5) {
-            currentState = MENU;
-            PlaySound("menu.wav", NULL, SND_ASYNC | SND_LOOP);
+    PlaySound("menu.wav", NULL, SND_ASYNC | SND_LOOP);
+    iSetTimer(17, updateGame);
+    iSetTimer(1000, [](){
+        if (!isPaused && nameEntered && fuel > 0) {
+            fuel--;
+        }
+        if ((fuel <= 0 || health <= 0) && nameEntered && !isPaused) {
+            PlaySound("missionpass.wav", NULL, SND_ASYNC);
+            isPaused = true;
         }
     });
-
-    iSetTimer(17, updateGame);
-
     iInitialize(SCREEN_WIDTH, SCREEN_HEIGHT, "Space Shooter Game");
-
     return 0;
 }
+
