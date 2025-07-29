@@ -8,6 +8,7 @@ Demo: https://youtu.be/zlmoCDD_lcA
 https://github.com/zamee0/space_shooting-/blob/main/Modern-iGraphics-0.4.0/menu.png?raw=true
 
 ## Name Entry Page : 
-https://github.com/zamee0/space_shooting-/blob/main/Modern-iGraphics-0.4.0/name.png?raw=true
+![Uploading name.png…]()
+
 
 ## Game Screen:
