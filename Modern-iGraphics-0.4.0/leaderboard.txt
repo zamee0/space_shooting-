@@ -36,3 +36,7 @@
 0 zamee
 530 zameme
 270 zamee
+240 streaming
+230 newgame
+110 newgame
+540 newgame

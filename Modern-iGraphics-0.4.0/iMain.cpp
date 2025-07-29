@@ -505,7 +505,7 @@ void iKeyboard(unsigned char key,int state)
             spawnEnemies();
             spawnMeteors();
         }
-         else if (key == 's' && state == GLUT_DOWN)
+    /*     else if (key == 's' && state == GLUT_DOWN)
     {
         if (currentLevel < maxLevel)
         {
@@ -525,6 +525,7 @@ void iKeyboard(unsigned char key,int state)
 
         }
     }
+        */
         else if (key == 'w' && bulletCount < 50 && state == GLUT_DOWN)
         {
             bulletX[bulletCount] = playerX + 57;
