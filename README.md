@@ -12,7 +12,7 @@ Demo: https://youtu.be/zlmoCDD_lcA
 
 ## Game Screen:
 You have to beat your enemy level by level. Then it comes to the final boss.
-There are in total 
+There are in total 5 bosses to beat the game. 
 
 ### Level 1 : 
 ![Image Alt](https://github.com/zamee0/space_shooting-/blob/a74f05eda289844ceb4838152c150224394c83f9/Modern-iGraphics-0.4.0/Screenshot%202025-07-29%20212254.png)
